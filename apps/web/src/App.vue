@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import zhCn from 'element-plus/es/locale/lang/zh-cn'
 import { useAuthStore } from '@/stores/auth'
@@ -32,19 +32,32 @@ function logout() {
   router.push({ name: 'login' })
 }
 
-onMounted(async () => {
-  applyDark(isDark.value)
-  if (auth.token) {
-    try {
-      await auth.fetchMe()
-      await Promise.all([settingsStore.fetchSettings(), tasksStore.loadTasks()])
-      timer.restoreIfNeeded()
-      timer.requestPermission()
-    } catch {
-      /* 401 由 axios 拦截器统一处理 */
-    }
+/** 初始化应用数据：拉取用户信息、设置与任务列表 */
+async function initApp() {
+  try {
+    await auth.fetchMe()
+    await Promise.all([settingsStore.fetchSettings(), tasksStore.loadTasks()])
+    timer.restoreIfNeeded()
+    timer.requestPermission()
+  } catch {
+    /* 401 由 axios 拦截器统一处理 */
   }
+}
+
+onMounted(() => {
+  applyDark(isDark.value)
+  // 刷新页面场景：token 已在 localStorage，直接初始化
+  if (auth.token) initApp()
 })
+
+// 页面内完成登录场景：token 从无到有，同样初始化，
+// 否则登录后首次进入任务/统计页会是空数据
+watch(
+  () => auth.token,
+  (token) => {
+    if (token) initApp()
+  },
+)
 </script>
 
 <template>

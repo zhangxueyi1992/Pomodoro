@@ -36,11 +36,21 @@ export async function login(input: LoginInput) {
   const user = await prisma.user.findUnique({ where: { email: input.email } })
   const passwordOk = user ? await bcrypt.compare(input.password, user.passwordHash) : false
   if (!user || !passwordOk) {
-    throw new HttpError(401, 'BAD_CREDENTIALS', '邮箱或密码错误')
+    throw new HttpError(401, 'BAD_CREDENTIALS', '用户名或密码错误')
   }
-  const token = jwt.sign({ userId: user.id }, config.jwtSecret, {
-    expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'],
-  })
+
+  // 单终端登录：每次登录递增会话版本号，作废此前所有设备的 token
+  const [current] = await prisma.$queryRaw<{ sessionVersion: number }[]>`
+    SELECT \`sessionVersion\` FROM \`User\` WHERE id = ${user.id}`
+  const nextVersion = Number(current?.sessionVersion ?? 0) + 1
+  await prisma.$executeRaw`
+    UPDATE \`User\` SET \`sessionVersion\` = ${nextVersion} WHERE id = ${user.id}`
+
+  const token = jwt.sign(
+    { userId: user.id, sessionVersion: nextVersion },
+    config.jwtSecret,
+    { expiresIn: config.jwtExpiresIn as jwt.SignOptions['expiresIn'] },
+  )
   return {
     token,
     user: { id: user.id, email: user.email, username: user.username },

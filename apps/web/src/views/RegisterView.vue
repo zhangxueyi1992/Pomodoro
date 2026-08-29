@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { CircleClose } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
 const auth = useAuthStore()
@@ -10,7 +11,34 @@ const router = useRouter()
 const form = reactive({ email: '', username: '', password: '', confirm: '' })
 const loading = ref(false)
 
+// 简单合理的邮箱格式校验
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const emailError = ref('')
+
+// input 事件触发：持续输入时实时校验；为空时不提示，格式错误时显示红色小字
+function validateEmail(): boolean {
+  const value = form.email.trim()
+  if (!value) {
+    emailError.value = ''
+    return true
+  }
+  const ok = EMAIL_RE.test(value)
+  emailError.value = ok ? '' : '请输入正确的邮箱地址'
+  return ok
+}
+
+// 一键清空邮箱输入
+function clearEmail() {
+  form.email = ''
+  validateEmail()
+}
+
 async function onSubmit() {
+  // 格式不正确：拦截提交
+  if (!validateEmail()) {
+    ElMessage.warning('请输入正确的邮箱地址')
+    return
+  }
   if (!form.email || !form.username || !form.password) {
     ElMessage.warning('请完整填写注册信息')
     return
@@ -42,7 +70,19 @@ async function onSubmit() {
       <p class="auth-sub">开始你的专注之旅</p>
       <el-form label-position="top" size="large" @submit.prevent="onSubmit">
         <el-form-item label="邮箱">
-          <el-input v-model="form.email" type="email" placeholder="you@example.com" autocomplete="email" />
+          <el-input
+            v-model="form.email"
+            placeholder="you@example.com"
+            autocomplete="email"
+            @input="validateEmail"
+          >
+            <template #suffix>
+              <el-icon v-if="form.email" class="email-clear" @click="clearEmail">
+                <CircleClose />
+              </el-icon>
+            </template>
+          </el-input>
+          <span v-if="emailError" class="email-error">{{ emailError }}</span>
         </el-form-item>
         <el-form-item label="用户名">
           <el-input v-model="form.username" placeholder="2-30 个字符" autocomplete="username" />
@@ -119,6 +159,23 @@ async function onSubmit() {
 .auth-submit {
   width: 100%;
   margin-top: 4px;
+}
+
+.email-error {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: #f56c6c;
+}
+
+.email-clear {
+  cursor: pointer;
+  color: var(--text-secondary);
+}
+
+.email-clear:hover {
+  color: #f56c6c;
 }
 
 .auth-foot {

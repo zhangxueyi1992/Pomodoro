@@ -12,6 +12,7 @@ model User {
   email        String   @unique
   username     String
   passwordHash String
+  sessionVersion Int @default(0)
   createdAt    DateTime @default(now())
   tasks        Task[]
   sessions     PomodoroSession[]

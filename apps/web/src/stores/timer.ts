@@ -3,6 +3,7 @@ import { computed, ref, watch } from 'vue'
 import type { SessionType, TimerMode, TimerStatus } from '@pomodoro/shared'
 import { createSessionApi } from '@/api'
 import { useSettingsStore } from '@/stores/settings'
+import { useTasksStore } from '@/stores/tasks'
 import { alertModeFinished, requestNotificationPermission } from '@/utils/notify'
 import { formatSeconds } from '@/utils/format'
 import { nextModeAfterBreak, nextModeAfterCompletedWork } from '@/utils/pomodoro'
@@ -30,6 +31,7 @@ function loadPersisted(): Partial<PersistedState> | null {
 
 export const useTimerStore = defineStore('timer', () => {
   const settingsStore = useSettingsStore()
+  const tasksStore = useTasksStore()
   const saved = loadPersisted()
 
   const mode = ref<TimerMode>(saved?.mode ?? 'work')
@@ -226,6 +228,20 @@ export const useTimerStore = defineStore('timer', () => {
       remainingSeconds.value = plannedDurationSeconds.value || durationFor(mode.value)
     }
   }
+
+  /* 当前专注任务被删除或标记完成后，自动清空选择（兜底，覆盖刷新等场景） */
+  watch(
+    () => tasksStore.tasks,
+    (tasks) => {
+      if (currentTaskId.value == null) return
+      const t = tasks.find((x) => x.id === currentTaskId.value)
+      if (!t || t.status === 'DONE') {
+        currentTaskId.value = null
+        persist()
+      }
+    },
+    { deep: true },
+  )
 
   /* 网页标题实时显示倒计时 */
   watch([mode, status, remainingSeconds], () => {

@@ -1,6 +1,6 @@
 import type { TaskStatus } from '@pomodoro/shared'
 import { prisma } from '../lib/prisma.js'
-import { notFound } from '../utils/http.js'
+import { badRequest, notFound } from '../utils/http.js'
 
 export interface CreateTaskInput {
   title: string
@@ -24,6 +24,16 @@ async function findOwned(userId: number, id: number) {
   return task
 }
 
+/** 校验当前用户下标题是否唯一（MySQL 默认不区分大小写），可排除指定任务自身 */
+async function assertTitleUnique(userId: number, title: string, excludeId?: number) {
+  const existing = await prisma.task.findFirst({
+    where: { userId, title, ...(excludeId ? { id: { not: excludeId } } : {}) },
+  })
+  if (existing) {
+    throw badRequest(`任务标题「${title}」已存在`)
+  }
+}
+
 export function listTasks(userId: number) {
   return prisma.task.findMany({
     where: { userId },
@@ -32,11 +42,15 @@ export function listTasks(userId: number) {
 }
 
 export async function createTask(userId: number, input: CreateTaskInput) {
+  await assertTitleUnique(userId, input.title)
   return prisma.task.create({ data: { userId, ...input } })
 }
 
 export async function updateTask(userId: number, id: number, input: UpdateTaskInput) {
   await findOwned(userId, id)
+  if (input.title) {
+    await assertTitleUnique(userId, input.title, id)
+  }
   return prisma.task.update({ where: { id }, data: input })
 }
 

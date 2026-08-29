@@ -1,0 +1,3 @@
+-- 单终端登录：为 User 增加会话版本号门闩
+-- MySQL 8.0.36 支持 ADD COLUMN IF NOT EXISTS（幂等）
+ALTER TABLE `User` ADD COLUMN IF NOT EXISTS sessionVersion INT NOT NULL DEFAULT 0;

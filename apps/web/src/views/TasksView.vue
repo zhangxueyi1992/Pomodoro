@@ -22,16 +22,23 @@ function openCreate() {
 }
 
 async function onSubmit() {
-  if (!form.title.trim()) {
+  const title = form.title.trim()
+  if (!title) {
     ElMessage.warning('请输入任务标题')
+    return
+  }
+  // 标题不可重复（与后端一致：不区分大小写）
+  const duplicated = tasksStore.tasks.some((t) => t.title.trim().toLowerCase() === title.toLowerCase())
+  if (duplicated) {
+    ElMessage.warning(`任务标题「${title}」已存在，请换一个`)
     return
   }
   saving.value = true
   try {
     await tasksStore.createTask({
-      title: form.title.trim(),
+      title,
       description: form.description.trim() || undefined,
-      estimatedPomodoros: form.estimatedPomodoros,
+      estimatedPomodoros: form.estimatedPomodoros ?? undefined,
     })
     dialogVisible.value = false
     ElMessage.success('任务已创建')
@@ -59,6 +66,9 @@ async function onRemove(task: Task) {
 
 async function onMarkDone(task: Task) {
   await tasksStore.markDone(task.id)
+  if (timer.currentTaskId === task.id) {
+    timer.currentTaskId = null
+  }
   ElMessage.success('任务已完成 🎉')
 }
 
@@ -91,9 +101,8 @@ function onFocus(task: Task) {
             <p v-if="task.description" class="task-desc">{{ task.description }}</p>
             <div class="task-meta">
               <span>
-                🍅 {{ task.completedPomodoros }}
-                <template v-if="task.estimatedPomodoros">/ {{ task.estimatedPomodoros }} 预估</template>
-                <template v-else>个番茄</template>
+                🍅 已完成 {{ task.completedPomodoros }}
+                <template v-if="task.estimatedPomodoros">/ 预估 {{ task.estimatedPomodoros }}</template>
               </span>
             </div>
           </div>
