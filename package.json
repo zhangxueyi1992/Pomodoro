@@ -1,0 +1,19 @@
+{
+  "name": "pomodoro",
+  "version": "0.1.0",
+  "private": true,
+  "description": "番茄时钟（Pomodoro Timer）全栈项目",
+  "scripts": {
+    "dev:web": "pnpm --filter @pomodoro/web dev",
+    "dev:server": "pnpm --filter @pomodoro/server dev",
+    "dev": "concurrently -n server,web -c blue,green \"pnpm dev:server\" \"pnpm dev:web\"",
+    "build": "pnpm build:shared && pnpm -r --if-present build",
+    "build:shared": "pnpm --filter @pomodoro/shared build",
+    "test": "pnpm -r --if-present test",
+    "db:migrate": "pnpm --filter @pomodoro/server prisma:migrate"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  },
+  "packageManager": "pnpm@11.7.0"
+}

@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  username     String
+  passwordHash String
+  createdAt    DateTime @default(now())
+  tasks        Task[]
+  sessions     PomodoroSession[]
+  settings     Settings?
+}
+
+model Task {
+  id                 Int               @id @default(autoincrement())
+  userId             Int
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title              String
+  description        String?
+  status             String            @default("TODO")
+  estimatedPomodoros Int?
+  completedPomodoros Int               @default(0)
+  sortOrder          Int               @default(0)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  sessions           PomodoroSession[]
+  @@index([userId])
+}
+
+model PomodoroSession {
+  id                     Int      @id @default(autoincrement())
+  userId                 Int
+  user                   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId                 Int?
+  task                   Task?    @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  type                   String
+  startedAt              DateTime
+  endedAt                DateTime
+  plannedDurationSeconds Int
+  completed              Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  @@index([userId, startedAt])
+}
+
+model Settings {
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  user                User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workMinutes         Int      @default(25)
+  shortBreakMinutes   Int      @default(5)
+  longBreakMinutes    Int      @default(15)
+  longBreakInterval   Int      @default(4)
+  autoStartNext       Boolean  @default(false)
+  soundEnabled        Boolean  @default(true)
+  notificationEnabled Boolean  @default(true)
+  updatedAt           DateTime @updatedAt
+}
