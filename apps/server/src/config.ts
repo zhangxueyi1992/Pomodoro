@@ -11,4 +11,12 @@ export const config = {
   clientOrigin: process.env.CLIENT_ORIGIN ?? 'http://localhost:5173',
   databaseUrl: process.env.DATABASE_URL ?? 'mysql://root:123456@127.0.0.1:3309/pomodoro',
   databaseUrlTest: process.env.DATABASE_URL_TEST ?? 'mysql://root:123456@127.0.0.1:3309/pomodoro_test',
+  smtp: {
+    host: process.env.SMTP_HOST ?? 'smtp.163.com',
+    port: Number(process.env.SMTP_PORT ?? 465),
+    secure: (process.env.SMTP_SECURE ?? 'true') === 'true',
+    user: process.env.SMTP_USER ?? '',
+    pass: process.env.SMTP_PASS ?? '',
+    from: process.env.SMTP_FROM ?? process.env.SMTP_USER ?? '',
+  },
 }

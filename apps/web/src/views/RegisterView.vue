@@ -2,6 +2,7 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { PASSWORD_HINT, PASSWORD_PATTERN, PASSWORD_PLACEHOLDER } from '@pomodoro/shared'
 import { CircleClose } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
 
@@ -41,6 +42,10 @@ async function onSubmit() {
   }
   if (!form.email || !form.username || !form.password) {
     ElMessage.warning('请完整填写注册信息')
+    return
+  }
+  if (!PASSWORD_PATTERN.test(form.password)) {
+    ElMessage.warning(PASSWORD_HINT)
     return
   }
   if (form.password !== form.confirm) {
@@ -88,7 +93,7 @@ async function onSubmit() {
           <el-input v-model="form.username" placeholder="2-30 个字符" autocomplete="username" />
         </el-form-item>
         <el-form-item label="密码">
-          <el-input v-model="form.password" type="password" show-password placeholder="至少 6 位" autocomplete="new-password" />
+          <el-input v-model="form.password" type="password" show-password :placeholder="PASSWORD_PLACEHOLDER" autocomplete="new-password" />
         </el-form-item>
         <el-form-item label="确认密码">
           <el-input

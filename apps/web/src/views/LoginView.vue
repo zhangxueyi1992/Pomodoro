@@ -4,6 +4,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { CircleClose } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import ForgotPasswordModal from '@/components/ForgotPasswordModal.vue'
 
 const auth = useAuthStore()
 const router = useRouter()
@@ -11,6 +12,7 @@ const route = useRoute()
 
 const form = reactive({ email: '', password: '' })
 const loading = ref(false)
+const forgotVisible = ref(false)
 
 // 简单合理的邮箱格式校验
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -93,11 +95,15 @@ async function onSubmit() {
         </el-form-item>
         <el-button type="primary" native-type="submit" class="auth-submit" :loading="loading">登 录</el-button>
       </el-form>
+      <div class="forgot-line">
+        <el-button link type="primary" @click="forgotVisible = true">忘记密码？</el-button>
+      </div>
       <p class="auth-foot">
         还没有账号？
         <router-link to="/register">立即注册</router-link>
       </p>
     </div>
+    <ForgotPasswordModal v-model="forgotVisible" :prefill-email="form.email" />
   </div>
 </template>
 
@@ -150,6 +156,15 @@ async function onSubmit() {
 .auth-submit {
   width: 100%;
   margin-top: 4px;
+}
+
+.forgot-line {
+  text-align: center;
+  margin-top: 12px;
+}
+
+.forgot-line .el-button {
+  font-size: 13px;
 }
 
 .email-error {

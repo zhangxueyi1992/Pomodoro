@@ -6,7 +6,6 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useTasksStore } from '@/stores/tasks'
 import { useTimerStore } from '@/stores/timer'
-import ProfileEditModal from '@/components/ProfileEditModal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -17,7 +16,6 @@ const timer = useTimerStore()
 
 const isPublic = computed(() => route.meta.public === true)
 const isDark = ref(localStorage.getItem('pomodoro.dark') === '1')
-const showProfile = ref(false)
 
 function applyDark(dark: boolean) {
   document.documentElement.classList.toggle('dark', dark)
@@ -80,16 +78,13 @@ watch(
           <button class="theme-btn" :title="isDark ? '切换到亮色模式' : '切换到深色模式'" @click="toggleDark">
             {{ isDark ? '☀️' : '🌙' }}
           </button>
-          <span v-if="auth.user" class="username" title="点击修改昵称 / 密码" @click="showProfile = true">
-            {{ auth.user.username }}
-          </span>
+          <span v-if="auth.user" class="username">{{ auth.user.username }}</span>
           <el-button link type="danger" @click="logout">退出</el-button>
         </div>
       </header>
       <main class="content">
         <router-view />
       </main>
-      <ProfileEditModal v-model="showProfile" />
     </template>
     <router-view v-else />
   </el-config-provider>
@@ -178,7 +173,6 @@ watch(
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  cursor: pointer;
 }
 
 .content {

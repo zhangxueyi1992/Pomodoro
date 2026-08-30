@@ -27,11 +27,18 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = await updateProfileApi(input)
   }
 
+  /** 换主邮箱成功后替换整个会话（服务端已递增 sessionVersion，旧 token 失效） */
+  function applySession(newToken: string, nextUser: UserInfo) {
+    token.value = newToken
+    user.value = nextUser
+    localStorage.setItem('token', newToken)
+  }
+
   function logout() {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
   }
 
-  return { token, user, login, register, fetchMe, updateProfile, logout }
+  return { token, user, login, register, fetchMe, updateProfile, applySession, logout }
 })

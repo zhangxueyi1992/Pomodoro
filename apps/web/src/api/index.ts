@@ -27,6 +27,27 @@ export function updateProfileApi(input: ProfileUpdate) {
   return http.patch<UserInfo>('/auth/me', input).then((r) => r.data)
 }
 
+/* 忘记密码（电子邮件验证码） */
+export function forgotPasswordApi(email: string) {
+  // SMTP 发信可能较慢（163 有时 >10s），放宽该请求超时，避免「邮件已发出却在客户端误报网络错误」
+  return http
+    .post<{ ok: boolean }>('/auth/forgot-password', { email }, { timeout: 30000 })
+    .then((r) => r.data)
+}
+
+export function resetPasswordApi(email: string, code: string, newPassword: string) {
+  return http.post<{ ok: boolean }>('/auth/reset-password', { email, code, newPassword }).then((r) => r.data)
+}
+
+/* 更换主邮箱（需登录）：先向新邮箱发验证码，再确认 */
+export function changeEmailApi(newEmail: string) {
+  return http.post<{ ok: boolean }>('/auth/change-email', { newEmail }, { timeout: 30000 }).then((r) => r.data)
+}
+
+export function confirmChangeEmailApi(newEmail: string, code: string) {
+  return http.post<{ token: string; user: UserInfo }>('/auth/change-email/confirm', { newEmail, code }).then((r) => r.data)
+}
+
 /* ---------- 任务 ---------- */
 export interface TaskInput {
   title: string

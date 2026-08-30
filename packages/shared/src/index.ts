@@ -69,6 +69,18 @@ export interface ApiError {
   message: string
 }
 
+/** 密码强度规则：至少 8 位，必须同时包含数字、大写字母、小写字母 */
+export const PASSWORD_PATTERN = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/
+
+/** bcrypt 密码长度上限（字节） */
+export const PASSWORD_MAX = 72
+
+/** 密码强度校验失败提示 */
+export const PASSWORD_HINT = '密码至少 8 位，且需包含数字和大小写字母'
+
+/** 密码输入框占位提示 */
+export const PASSWORD_PLACEHOLDER = '8 位以上，含数字和大小写字母'
+
 /** 默认设置常量 */
 export const DEFAULT_SETTINGS: Settings = {
   workMinutes: 25,

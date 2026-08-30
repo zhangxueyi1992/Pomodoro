@@ -2,6 +2,7 @@
 import { reactive, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { PASSWORD_HINT, PASSWORD_PATTERN, PASSWORD_PLACEHOLDER } from '@pomodoro/shared'
 import { useAuthStore } from '@/stores/auth'
 
 const props = defineProps<{ modelValue: boolean }>()
@@ -54,8 +55,8 @@ async function onSubmit() {
     return
   }
   if (changingPass) {
-    if (form.newPassword.length < 6) {
-      ElMessage.warning('新密码至少 6 位')
+    if (!PASSWORD_PATTERN.test(form.newPassword)) {
+      ElMessage.warning(PASSWORD_HINT)
       return
     }
     if (form.newPassword !== form.confirmPassword) {
@@ -108,7 +109,7 @@ async function onSubmit() {
         <el-input v-model="form.currentPassword" type="password" show-password placeholder="修改密码时必填" />
       </el-form-item>
       <el-form-item label="新密码">
-        <el-input v-model="form.newPassword" type="password" show-password placeholder="至少 6 位（可选）" />
+        <el-input v-model="form.newPassword" type="password" show-password :placeholder="`${PASSWORD_PLACEHOLDER}（可选）`" />
       </el-form-item>
       <el-form-item label="确认新密码">
         <el-input v-model="form.confirmPassword" type="password" show-password placeholder="再次输入新密码" />
@@ -120,3 +121,5 @@ async function onSubmit() {
     </template>
   </el-dialog>
 </template>
+
+<style scoped></style>
