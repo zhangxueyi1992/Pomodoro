@@ -2,8 +2,10 @@
 import { onMounted, reactive, ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useSettingsStore } from '@/stores/settings'
+import { useTimerStore } from '@/stores/timer'
 
 const settingsStore = useSettingsStore()
+const timerStore = useTimerStore()
 const form = reactive({
   workMinutes: 25,
   shortBreakMinutes: 5,
@@ -27,7 +29,8 @@ async function onSave() {
   try {
     Object.assign(settingsStore.settings, form)
     await settingsStore.saveSettings()
-    ElMessage.success('设置已保存')
+    timerStore.applySettingsChange()
+    ElMessage.success('设置已保存，计时器已按新时长复位')
   } finally {
     saving.value = false
   }
@@ -88,7 +91,7 @@ async function onSave() {
 
     <div class="save-bar">
       <el-button type="primary" size="large" :loading="saving" @click="onSave">保存设置</el-button>
-      <span class="save-tip">修改时长后，空闲状态的计时器会自动刷新</span>
+      <span class="save-tip">保存后立即生效；若计时器正在运行，将停止并复位为新的时长</span>
     </div>
   </div>
 </template>

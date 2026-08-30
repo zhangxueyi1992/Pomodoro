@@ -1,4 +1,4 @@
-import type { PomodoroSession, Settings, StatsRange, StatsSummary, Task, UserInfo } from '@pomodoro/shared'
+import type { PomodoroSession, Settings, StatsRange, StatsSummary, Task, TaskStatus, UserInfo } from '@pomodoro/shared'
 import http from './http'
 
 /* ---------- 认证 ---------- */
@@ -16,6 +16,17 @@ export function meApi() {
   return http.get<UserInfo>('/auth/me').then((r) => r.data)
 }
 
+/* 修改资料（昵称 / 密码） */
+export interface ProfileUpdate {
+  username?: string
+  currentPassword?: string
+  newPassword?: string
+}
+
+export function updateProfileApi(input: ProfileUpdate) {
+  return http.patch<UserInfo>('/auth/me', input).then((r) => r.data)
+}
+
 /* ---------- 任务 ---------- */
 export interface TaskInput {
   title: string
@@ -26,7 +37,7 @@ export interface TaskInput {
 export interface TaskUpdate {
   title?: string
   description?: string | null
-  status?: 'TODO' | 'DOING' | 'DONE'
+  status?: TaskStatus
   estimatedPomodoros?: number | null
   sortOrder?: number
 }

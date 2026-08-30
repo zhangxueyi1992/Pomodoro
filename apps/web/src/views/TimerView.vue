@@ -69,6 +69,11 @@ function onStartPause() {
   }
 }
 
+/** 在计时器页切换「当前专注任务」→ 结束所有进行中标记 */
+function onTaskSelect() {
+  void timer.clearDoing()
+}
+
 function onSkip() {
   if (timer.status === 'idle') {
     timer.switchMode(timer.mode === 'work' ? 'shortBreak' : 'work')
@@ -121,13 +126,16 @@ function onSkip() {
       <el-button size="large" round type="danger" plain @click="onSkip">跳过</el-button>
     </div>
 
-    <div class="task-picker">
+    <div v-if="timer.mode === 'work'" class="task-picker">
       <span class="task-label">当前专注任务：</span>
       <el-select
         v-model="timer.currentTaskId"
         placeholder="选择要专注的任务（可选）"
         clearable
         style="width: 280px"
+        :disabled="timer.status !== 'idle'"
+        :title="timer.status !== 'idle' ? '正在专注中，请先重置或跳过后再切换' : ''"
+        @change="onTaskSelect"
       >
         <el-option
           v-for="t in tasksStore.tasks.filter((x) => x.status !== 'DONE')"

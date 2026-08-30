@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import type { UserInfo } from '@pomodoro/shared'
-import { loginApi, meApi, registerApi } from '@/api'
+import { loginApi, meApi, registerApi, updateProfileApi, type ProfileUpdate } from '@/api'
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref<string | null>(localStorage.getItem('token'))
@@ -23,11 +23,15 @@ export const useAuthStore = defineStore('auth', () => {
     user.value = await meApi()
   }
 
+  async function updateProfile(input: ProfileUpdate) {
+    user.value = await updateProfileApi(input)
+  }
+
   function logout() {
     token.value = null
     user.value = null
     localStorage.removeItem('token')
   }
 
-  return { token, user, login, register, fetchMe, logout }
+  return { token, user, login, register, fetchMe, updateProfile, logout }
 })

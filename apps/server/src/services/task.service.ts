@@ -24,10 +24,15 @@ async function findOwned(userId: number, id: number) {
   return task
 }
 
-/** 校验当前用户下标题是否唯一（MySQL 默认不区分大小写），可排除指定任务自身 */
+/** 校验当前用户下标题是否唯一（MySQL 默认不区分大小写），可排除指定任务自身；逻辑删除的任务不占用标题 */
 async function assertTitleUnique(userId: number, title: string, excludeId?: number) {
   const existing = await prisma.task.findFirst({
-    where: { userId, title, ...(excludeId ? { id: { not: excludeId } } : {}) },
+    where: {
+      userId,
+      title,
+      status: { not: 'DELETED' },
+      ...(excludeId ? { id: { not: excludeId } } : {}),
+    },
   })
   if (existing) {
     throw badRequest(`任务标题「${title}」已存在`)
@@ -36,7 +41,7 @@ async function assertTitleUnique(userId: number, title: string, excludeId?: numb
 
 export function listTasks(userId: number) {
   return prisma.task.findMany({
-    where: { userId },
+    where: { userId, status: { not: 'DELETED' } },
     orderBy: [{ sortOrder: 'asc' }, { createdAt: 'desc' }],
   })
 }
@@ -56,6 +61,7 @@ export async function updateTask(userId: number, id: number, input: UpdateTaskIn
 
 export async function deleteTask(userId: number, id: number) {
   await findOwned(userId, id)
-  await prisma.task.delete({ where: { id } })
+  // 逻辑删除：仅将状态标记为 DELETED，保留记录（关联的会话 taskId 不被置空，统计历史完整）
+  await prisma.task.update({ where: { id }, data: { status: 'DELETED' } })
   return { ok: true }
 }

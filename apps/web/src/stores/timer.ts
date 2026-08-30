@@ -111,6 +111,8 @@ export const useTimerStore = defineStore('timer', () => {
     plannedDurationSeconds.value = 0
     remainingSeconds.value = durationFor(m)
     persist()
+    // 离开工作阶段（进入短/长休息）时，结束「进行中」标记
+    if (m !== 'work') void clearDoing()
   }
 
   function start() {
@@ -126,6 +128,11 @@ export const useTimerStore = defineStore('timer', () => {
     refreshRemaining()
     startTicker()
     persist()
+    // 在工作阶段开始倒计时且选中了任务 → 标记该任务为「进行中」。
+    // 覆盖「从任务页设为进行中」之外的场景（计时器页下拉选任务后点「开始」）。
+    if (mode.value === 'work' && currentTaskId.value != null) {
+      markDoing(currentTaskId.value)
+    }
   }
 
   function pause() {
@@ -146,6 +153,69 @@ export const useTimerStore = defineStore('timer', () => {
     plannedDurationSeconds.value = 0
     remainingSeconds.value = durationFor(mode.value)
     persist()
+    // 重置计时 = 放弃本次专注，结束「进行中」标记
+    void clearDoing()
+  }
+
+  /**
+   * 时长设置变更后调用：停止当前计时并复原为当前模式的「新」时长。
+   * durationFor 读取的是最新设置，故运行中/暂停中的计时都会被停止并复位到新时长，
+   * 保证回到计时器页无需刷新即可看到修改后的分钟数。
+   */
+  function applySettingsChange() {
+    reset()
+  }
+
+  /**
+   * 把所有「进行中」任务还原为待办（去掉进行中标签、恢复「设为进行中」按钮）。
+   * 用于退出专注/切换当前专注任务等场景。
+   */
+  async function clearDoing() {
+    const doing = tasksStore.tasks.filter((t) => t.status === 'DOING')
+    if (doing.length === 0) return
+    try {
+      await Promise.all(doing.map((t) => tasksStore.updateTask(t.id, { status: 'TODO' })))
+    } catch {
+      /* 状态同步失败不阻塞计时流程 */
+    }
+  }
+
+  /** 把指定任务标记为「进行中」（幂等：已是 DOING 或 DONE 则跳过） */
+  function markDoing(taskId: number) {
+    const t = tasksStore.tasks.find((x) => x.id === taskId)
+    if (t && t.status !== 'DONE' && t.status !== 'DOING') {
+      void tasksStore.updateTask(taskId, { status: 'DOING' })
+    }
+  }
+
+  /** 任务是否为「当前专注」且正在工作倒计时/暂停中（即正在被计时器占用；休息阶段与任务无关，不算） */
+  function isTaskActive(taskId: number): boolean {
+    return mode.value === 'work' && currentTaskId.value === taskId && status.value !== 'idle'
+  }
+
+  /**
+   * 把任务设为「进行中」并立即开始一个工作番茄：
+   * 复位到工作阶段（停止其它阶段、防止正在倒计时）、选中当前专注任务、
+   * 标记为进行中、开始倒计时。
+   */
+  async function startFocus(taskId: number) {
+    await clearDoing()
+    // 强制切回工作并复位其它阶段
+    mode.value = 'work'
+    stopTicker()
+    status.value = 'idle'
+    sessionStartedAt.value = null
+    pausedElapsedSeconds.value = 0
+    plannedDurationSeconds.value = 0
+    currentTaskId.value = taskId
+    remainingSeconds.value = durationFor('work')
+    persist()
+    try {
+      await tasksStore.updateTask(taskId, { status: 'DOING' })
+    } catch {
+      /* 忽略 */
+    }
+    start()
   }
 
   /** 上报当前会话（completed 表示是否完整跑完） */
@@ -212,6 +282,8 @@ export const useTimerStore = defineStore('timer', () => {
     } else {
       switchMode('work')
     }
+    // 跳过 = 放弃本次专注，结束「进行中」标记
+    void clearDoing()
   }
 
   /** 页面刷新后恢复计时（若已超时则立即结算） */
@@ -261,6 +333,10 @@ export const useTimerStore = defineStore('timer', () => {
     reset,
     skip,
     switchMode,
+    applySettingsChange,
+    startFocus,
+    clearDoing,
+    isTaskActive,
     restoreIfNeeded,
     requestPermission: requestNotificationPermission,
   }

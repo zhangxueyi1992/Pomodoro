@@ -47,7 +47,17 @@ async function onSubmit() {
   }
 }
 
+/** 任务正在倒计时/暂停中（被计时器占用）时，禁止完成或删除 */
+function guardActive(task: Task): boolean {
+  if (timer.isTaskActive(task.id)) {
+    ElMessage.warning('当前任务正在进行，不允许此操作')
+    return true
+  }
+  return false
+}
+
 async function onRemove(task: Task) {
+  if (guardActive(task)) return
   try {
     await ElMessageBox.confirm(`确定删除任务「${task.title}」吗？相关统计不会删除。`, '删除任务', {
       type: 'warning',
@@ -65,6 +75,16 @@ async function onRemove(task: Task) {
 }
 
 async function onMarkDone(task: Task) {
+  if (guardActive(task)) return
+  try {
+    await ElMessageBox.confirm(`确定完成任务「${task.title}」吗？`, '完成任务', {
+      type: 'success',
+      confirmButtonText: '完成',
+      cancelButtonText: '取消',
+    })
+  } catch {
+    return
+  }
   await tasksStore.markDone(task.id)
   if (timer.currentTaskId === task.id) {
     timer.currentTaskId = null
@@ -72,9 +92,9 @@ async function onMarkDone(task: Task) {
   ElMessage.success('任务已完成 🎉')
 }
 
-function onFocus(task: Task) {
-  timer.currentTaskId = task.id
-  if (timer.status === 'idle') timer.switchMode('work')
+async function onStartFocus(task: Task) {
+  await timer.startFocus(task.id)
+  ElMessage.success(`已开始专注「${task.title}」`)
   router.push('/')
 }
 </script>
@@ -107,8 +127,7 @@ function onFocus(task: Task) {
             </div>
           </div>
           <div class="task-actions">
-            <el-button v-if="task.status !== 'DONE'" type="primary" size="small" @click="onFocus(task)">开始专注</el-button>
-            <el-button v-if="task.status === 'TODO'" size="small" @click="tasksStore.updateTask(task.id, { status: 'DOING' })">设为进行中</el-button>
+            <el-button v-if="task.status === 'TODO'" type="primary" size="small" @click="onStartFocus(task)">设为进行中</el-button>
             <el-button v-if="task.status !== 'DONE'" type="success" size="small" plain @click="onMarkDone(task)">完成</el-button>
             <el-button type="danger" size="small" plain @click="onRemove(task)">删除</el-button>
           </div>

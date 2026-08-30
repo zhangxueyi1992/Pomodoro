@@ -16,13 +16,13 @@ function render() {
   const axisLine = dark ? '#2f3540' : '#e4e7ed'
   chart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['番茄数', '专注分钟'], textStyle: { color: textColor } },
-    grid: { left: 48, right: 24, top: 44, bottom: 36 },
+    legend: { top: 0, left: 'center', textStyle: { color: textColor } },
+    grid: { left: 12, right: 14, top: 48, bottom: 36, containLabel: true },
     xAxis: {
       type: 'category',
       data: props.data.map((d) => d.date.slice(5)),
       axisLine: { lineStyle: { color: axisLine } },
-      axisLabel: { color: textColor },
+      axisLabel: { color: textColor, hideOverlap: true },
     },
     yAxis: {
       type: 'value',

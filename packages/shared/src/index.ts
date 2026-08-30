@@ -8,7 +8,7 @@ export type TimerStatus = 'idle' | 'running' | 'paused'
 export type SessionType = TimerMode
 
 /** 任务状态 */
-export type TaskStatus = 'TODO' | 'DOING' | 'DONE'
+export type TaskStatus = 'TODO' | 'DOING' | 'DONE' | 'DELETED'
 
 /** 会话记录（前后端共享） */
 export interface PomodoroSession {

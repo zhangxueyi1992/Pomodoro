@@ -20,6 +20,10 @@ export async function register(input: RegisterInput) {
   if (existing) {
     throw new HttpError(409, 'EMAIL_TAKEN', '该邮箱已被注册')
   }
+  const nameTaken = await prisma.user.findFirst({ where: { username: input.username } })
+  if (nameTaken) {
+    throw new HttpError(409, 'USERNAME_TAKEN', '该昵称已被使用')
+  }
   const passwordHash = await bcrypt.hash(input.password, 10)
   const user = await prisma.user.create({
     data: {
@@ -66,4 +70,52 @@ export async function getMe(userId: number) {
     throw new HttpError(401, 'UNAUTHORIZED', '用户不存在')
   }
   return user
+}
+
+export interface UpdateProfileInput {
+  username?: string
+  currentPassword?: string
+  newPassword?: string
+}
+
+/** 修改昵称 / 密码（昵称需唯一，改密码需校验原密码） */
+export async function updateProfile(userId: number, input: UpdateProfileInput) {
+  const user = await prisma.user.findUnique({ where: { id: userId } })
+  if (!user) {
+    throw new HttpError(401, 'UNAUTHORIZED', '用户不存在')
+  }
+
+  // 昵称唯一性（MySQL 默认不区分大小写；排除自己）
+  if (input.username && input.username !== user.username) {
+    const taken = await prisma.user.findFirst({
+      where: { username: input.username, id: { not: userId } },
+    })
+    if (taken) {
+      throw new HttpError(409, 'USERNAME_TAKEN', '该昵称已被使用')
+    }
+  }
+
+  const data: { username?: string; passwordHash?: string } = {}
+  if (input.username) data.username = input.username
+  if (input.newPassword) {
+    if (!input.currentPassword) {
+      throw new HttpError(400, 'BAD_REQUEST', '请输入原密码')
+    }
+    const ok = await bcrypt.compare(input.currentPassword, user.passwordHash)
+    if (!ok) {
+      throw new HttpError(400, 'BAD_PASSWORD', '原密码不正确')
+    }
+    data.passwordHash = await bcrypt.hash(input.newPassword, 10)
+  }
+
+  if (Object.keys(data).length === 0) {
+    throw new HttpError(400, 'BAD_REQUEST', '请至少修改一项')
+  }
+
+  const updated = await prisma.user.update({
+    where: { id: userId },
+    data,
+    select: { id: true, email: true, username: true },
+  })
+  return updated
 }
