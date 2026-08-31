@@ -1,9 +1,10 @@
 <script setup lang="ts">
-import { reactive, ref } from 'vue'
+import { onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { CircleClose } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/stores/auth'
+import { IDLE_MS_KEY, SEVEN_DAYS_MS, restartIdleTimeout } from '@/utils/idleTimeout'
 import ForgotPasswordModal from '@/components/ForgotPasswordModal.vue'
 
 const auth = useAuthStore()
@@ -13,6 +14,24 @@ const route = useRoute()
 const form = reactive({ email: '', password: '' })
 const loading = ref(false)
 const forgotVisible = ref(false)
+/** 记住账号：登录成功后在本浏览器记录邮箱，下次自动填充 */
+const rememberEmail = ref(false)
+/** 下次自动登录：登录后空闲超时从 30 分钟放宽到 7 天 */
+const autoLogin = ref(false)
+
+/** localStorage 中记住的账号邮箱键名 */
+const REMEMBERED_EMAIL_KEY = 'pomodoro.rememberedEmail'
+
+onMounted(() => {
+  // 记住账号：有记录则自动填充邮箱并勾选
+  const saved = localStorage.getItem(REMEMBERED_EMAIL_KEY)
+  if (saved) {
+    form.email = saved
+    rememberEmail.value = true
+  }
+  // 下次自动登录：上次保存的空闲时长为 7 天则默认勾选
+  autoLogin.value = localStorage.getItem(IDLE_MS_KEY) === String(SEVEN_DAYS_MS)
+})
 
 // 简单合理的邮箱格式校验
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -49,6 +68,20 @@ async function onSubmit() {
   loading.value = true
   try {
     await auth.login(form.email, form.password)
+    // 记住账号：勾选则记录邮箱，取消则清除记录
+    if (rememberEmail.value) {
+      localStorage.setItem(REMEMBERED_EMAIL_KEY, form.email.trim())
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY)
+    }
+    // 下次自动登录：勾选则空闲超时放宽到 7 天，取消则恢复默认 30 分钟
+    if (autoLogin.value) {
+      localStorage.setItem(IDLE_MS_KEY, String(SEVEN_DAYS_MS))
+    } else {
+      localStorage.removeItem(IDLE_MS_KEY)
+    }
+    // 立即以最新时长重启空闲检测（App.vue 不会重新挂载）
+    restartIdleTimeout()
     const redirect = typeof route.query.redirect === 'string' ? route.query.redirect : '/'
     router.push(redirect)
   } catch {
@@ -93,6 +126,10 @@ async function onSubmit() {
             @keyup.enter="onSubmit"
           />
         </el-form-item>
+        <div class="auth-options">
+          <el-checkbox v-model="rememberEmail">记住账号</el-checkbox>
+          <el-checkbox v-model="autoLogin">下次自动登录</el-checkbox>
+        </div>
         <el-button type="primary" native-type="submit" class="auth-submit" :loading="loading">登 录</el-button>
       </el-form>
       <div class="forgot-line">
@@ -156,6 +193,25 @@ async function onSubmit() {
 .auth-submit {
   width: 100%;
   margin-top: 4px;
+}
+
+.auth-options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: -4px 0 16px;
+}
+
+.auth-options .el-checkbox {
+  font-size: 13px;
+}
+
+@media (max-width: 480px) {
+  .auth-options {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
 }
 
 .forgot-line {

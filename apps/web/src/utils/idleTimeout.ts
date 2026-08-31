@@ -6,6 +6,37 @@ import { useTimerStore } from '@/stores/timer'
 /** 空闲超时阈值（毫秒），默认 30 分钟：超过该时长无任何用户操作则自动退出登录 */
 export const IDLE_TIMEOUT_MS = 30 * 60 * 1000
 
+/** 勾选“下次自动登录”时的空闲超时阈值：7 天 */
+export const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000
+
+/** localStorage 中保存空闲超时时长（毫秒，字符串）的键名 */
+export const IDLE_MS_KEY = 'pomodoro.idleMs'
+
+/** 读取空闲超时时长：优先取 localStorage 中保存的值，无效则回退默认 30 分钟 */
+export function readIdleMs(): number {
+  const raw = localStorage.getItem(IDLE_MS_KEY)
+  if (raw) {
+    const n = Number(raw)
+    if (Number.isFinite(n) && n > 0) return n
+  }
+  return IDLE_TIMEOUT_MS
+}
+
+/** 当前空闲检测实例的停止函数（供 restartIdleTimeout 复用） */
+let stopCurrent: (() => void) | undefined
+
+/** 以 localStorage 中保存的最新时长（重新）启动空闲检测；登录勾选状态变化后调用即可立即生效 */
+export function restartIdleTimeout(): void {
+  stopCurrent?.()
+  stopCurrent = startIdleTimeout(readIdleMs())
+}
+
+/** 停止当前空闲检测（应用卸载时调用） */
+export function stopIdleTimeout(): void {
+  stopCurrent?.()
+  stopCurrent = undefined
+}
+
 /** 视为“用户操作”的浏览器事件，任一触发都会重置空闲计时 */
 const ACTIVITY_EVENTS = ['mousemove', 'mousedown', 'keydown', 'touchstart', 'scroll', 'wheel'] as const
 
