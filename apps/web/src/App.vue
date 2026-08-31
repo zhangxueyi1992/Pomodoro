@@ -6,6 +6,7 @@ import { useAuthStore } from '@/stores/auth'
 import { useSettingsStore } from '@/stores/settings'
 import { useTasksStore } from '@/stores/tasks'
 import { useTimerStore } from '@/stores/timer'
+import { startIdleTimeout } from '@/utils/idleTimeout'
 
 const route = useRoute()
 const router = useRouter()
@@ -18,6 +19,8 @@ const isPublic = computed(() => route.meta.public === true)
 const isDark = ref(localStorage.getItem('pomodoro.dark') === '1')
 /** 移动端折叠菜单开关 */
 const menuOpen = ref(false)
+/** 空闲超时检测的停止函数 */
+let stopIdleTimeout: (() => void) | undefined
 
 // 路由变化（含链接点击、退出登录）时收起折叠菜单
 watch(
@@ -57,11 +60,14 @@ async function initApp() {
 onMounted(() => {
   applyDark(isDark.value)
   window.addEventListener('resize', onViewportChange)
+  // 30 分钟无任何操作自动退出登录（全局空闲检测）
+  stopIdleTimeout = startIdleTimeout()
   // 刷新页面场景：token 已在 localStorage，直接初始化
   if (auth.token) initApp()
 })
 
 onBeforeUnmount(() => {
+  stopIdleTimeout?.()
   window.removeEventListener('resize', onViewportChange)
 })
 

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
-import { ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import type { TimerMode } from '@pomodoro/shared'
 import TimerCircle from '@/components/TimerCircle.vue'
 import { useSettingsStore } from '@/stores/settings'
@@ -64,9 +64,14 @@ function switchMode(mode: TimerMode) {
 function onStartPause() {
   if (timer.isRunning) {
     timer.pause()
-  } else {
-    timer.start()
+    return
   }
+  // 工作阶段开始倒计时前必须已选择专注任务
+  if (timer.mode === 'work' && timer.currentTaskId == null) {
+    ElMessage.warning('请选择专注任务后开始')
+    return
+  }
+  timer.start()
 }
 
 /** 在计时器页切换「当前专注任务」→ 结束所有进行中标记 */
@@ -130,7 +135,7 @@ function onSkip() {
       <span class="task-label">当前专注任务：</span>
       <el-select
         v-model="timer.currentTaskId"
-        placeholder="选择要专注的任务（可选）"
+        placeholder="请选择要专注的任务"
         clearable
         class="task-select"
         :disabled="timer.status !== 'idle'"

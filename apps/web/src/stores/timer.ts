@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 import type { SessionType, TimerMode, TimerStatus } from '@pomodoro/shared'
 import { createSessionApi } from '@/api'
 import { useSettingsStore } from '@/stores/settings'
@@ -117,6 +118,11 @@ export const useTimerStore = defineStore('timer', () => {
 
   function start() {
     if (status.value === 'running') return
+    // 工作阶段必须已选择专注任务才能开始倒计时（覆盖自动开始等所有启动路径）
+    if (mode.value === 'work' && currentTaskId.value == null) {
+      ElMessage.warning('请选择专注任务后开始')
+      return
+    }
     if (status.value === 'idle') {
       plannedDurationSeconds.value = durationFor(mode.value)
       sessionStartedAt.value = Date.now()
