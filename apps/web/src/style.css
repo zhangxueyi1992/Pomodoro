@@ -38,6 +38,12 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   transition: background 0.3s, color 0.3s;
+  /* 兜底：杜绝意外的横向滚动（clip 不创建滚动容器，不影响 sticky 顶栏） */
+  overflow-x: clip;
+}
+
+#app {
+  overflow-x: clip;
 }
 
 .page {
@@ -50,4 +56,21 @@ body {
   font-size: 20px;
   font-weight: 600;
   margin: 0 0 20px;
+}
+
+/* ---------- 移动端适配 ---------- */
+
+/* Element Plus 对话框：窄屏时限制宽度，避免固定 px 宽度撑出横向滚动条 */
+@media (max-width: 768px) {
+  .el-dialog {
+    --el-dialog-width: 92% !important;
+    --el-dialog-margin-top: 8vh;
+  }
+}
+
+/* 小屏页面边距收窄 */
+@media (max-width: 640px) {
+  .page {
+    padding: 16px 12px 40px;
+  }
 }

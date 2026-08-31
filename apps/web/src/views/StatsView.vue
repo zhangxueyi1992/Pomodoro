@@ -97,4 +97,12 @@ watch(range, load)
 .chart-card {
   margin-top: 4px;
 }
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 640px) {
+  .stat-cards {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
 </style>

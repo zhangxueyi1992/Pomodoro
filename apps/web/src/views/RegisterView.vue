@@ -195,4 +195,11 @@ async function onSubmit() {
   text-decoration: none;
   font-weight: 600;
 }
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 480px) {
+  .auth-card {
+    padding: 28px 20px 20px;
+  }
+}
 </style>

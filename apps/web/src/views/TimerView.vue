@@ -132,7 +132,7 @@ function onSkip() {
         v-model="timer.currentTaskId"
         placeholder="选择要专注的任务（可选）"
         clearable
-        style="width: 280px"
+        class="task-select"
         :disabled="timer.status !== 'idle'"
         :title="timer.status !== 'idle' ? '正在专注中，请先重置或跳过后再切换' : ''"
         @change="onTaskSelect"
@@ -236,8 +236,48 @@ function onSkip() {
   justify-content: center;
 }
 
+.task-select {
+  width: 280px;
+}
+
 .task-progress {
   color: var(--work-color);
   font-size: 13px;
+}
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 640px) {
+  .timer-page {
+    padding-top: 24px;
+  }
+
+  .time-display {
+    font-size: 52px;
+  }
+
+  /* 模式切换：等宽铺满，避免溢出 */
+  .mode-tabs {
+    width: 100%;
+  }
+
+  .mode-tab {
+    flex: 1;
+    padding: 8px 4px;
+    text-align: center;
+  }
+
+  .controls {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .control-main {
+    min-width: 96px;
+  }
+
+  .task-select {
+    width: 100%;
+    max-width: 280px;
+  }
 }
 </style>

@@ -307,4 +307,25 @@ async function onConfirmChange() {
   font-size: 12px;
   color: var(--text-secondary);
 }
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 640px) {
+  .account-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .account-actions {
+    flex-wrap: wrap;
+  }
+
+  .save-bar {
+    flex-wrap: wrap;
+  }
+
+  .save-tip {
+    width: 100%;
+  }
+}
 </style>

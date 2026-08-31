@@ -218,4 +218,17 @@ async function onStartFocus(task: Task) {
   flex-wrap: wrap;
   justify-content: flex-end;
 }
+
+/* ---------- 移动端适配 ---------- */
+@media (max-width: 640px) {
+  .task-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .task-actions {
+    justify-content: flex-start;
+  }
+}
 </style>

@@ -81,4 +81,10 @@ watch(() => props.data, render, { deep: true })
   width: 100%;
   height: 360px;
 }
+
+@media (max-width: 640px) {
+  .stat-chart {
+    height: 300px;
+  }
+}
 </style>
